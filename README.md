@@ -1,1 +1,1 @@
-# ProjectAjou1
+# CMP-MidProject
