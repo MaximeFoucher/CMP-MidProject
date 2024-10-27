@@ -122,7 +122,8 @@ public void keyPressed() {
     if (screenloose) {
       // if game is over you can start a new game
       screenloose = false;
-      score = 0; 
+      score = 0;
+      scoretemp = 0;
       orcas.clear(); // clear all orcas
     }
     screenstart = false; // start game
