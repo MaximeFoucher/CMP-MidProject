@@ -1,0 +1,4 @@
+Main/Antoine/java/lib/modules filter=lfs diff=lfs merge=lfs -text
+Main/Luke/java/lib/modules filter=lfs diff=lfs merge=lfs -text
+Main/Hasnain/java/lib/modules filter=lfs diff=lfs merge=lfs -text
+Main/Maxime/java/lib/modules filter=lfs diff=lfs merge=lfs -text
