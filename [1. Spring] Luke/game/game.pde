@@ -1,128 +1,140 @@
-import processing.sound.*;  // Sound 라이브러리 임포트
+/*
+ * ────────────────────────────────────────────────────────────────────────────────
+ * Project: Interactive Game with Sound Effects and Visual Elements
+ * Description: This code creates an interactive game with a colorful grid, sound effects,
+ *              and visual animations. Players navigate a character to collect items while
+ *              avoiding incorrect matches to maintain a high score.
+ *
+ * Created by: Luke KIM / KIM JUN YOUNG - 201920765
+ * Date: October 10, 2024
+ * ────────────────────────────────────────────────────────────────────────────────
+ */
+
+import processing.sound.*;  // Import Sound library
 
 SoundFile backgroundMusic;
 SoundFile eatSound;
 SoundFile gameOverSound;
-boolean loadingDone = false;  // 로딩 완료 여부
+boolean loadingDone = false;  // Loading status
 
-int gridSize = 20;  // 그리드 크기
-int cols, rows;     // 그리드의 가로, 세로 크기
-int playerX, playerY;  // 플레이어의 위치
-int playerDirX = 1, playerDirY = 0;  // 플레이어의 방향
-int speed = 10;  // 기본 속도
-int maxSpeed = 20;  // 최대 속도
-int frameCounter = 0;  // 속도 제어를 위한 프레임 카운터
-int score = 0;  // 점수 변수
+int gridSize = 20;  // Grid size
+int cols, rows;     // Grid dimensions (width and height)
+int playerX, playerY;  // Player position
+int playerDirX = 1, playerDirY = 0;  // Player direction
+int speed = 10;  // Default speed
+int maxSpeed = 20;  // Maximum speed
+int frameCounter = 0;  // Frame counter to control speed
+int score = 0;  // Score variable
 
 color[] colors = {color(255, 0, 0), color(0, 255, 0), color(0, 0, 255), color(255, 255, 0)};
-color currentColor;  // 현재 플레이어의 색상
-ArrayList<Flower> flowers;  // 꽃을 저장하는 배열
+color currentColor;  // Current player color
+ArrayList<Flower> flowers;  // Array to store flowers
 boolean gameOver = false;
-boolean hasPlayedGameOverSound = false;  // 게임 오버 사운드가 이미 재생되었는지 확인하는 변수
-int safeDistance = 100;  // 꽃이 캐릭터로부터 떨어져 생성되는 최소 거리
-int borderMargin = 50;  // 화면 가장자리 여백
+boolean hasPlayedGameOverSound = false;  // Flag to check if the game over sound has already been played
+int safeDistance = 100;  // Minimum distance from character when spawning flowers
+int borderMargin = 50;  // Margin for edges of the screen
 
 PImage characterImg;
 PImage flowerImg;
-PImage backgroundImg;  // 배경 이미지 변수
+PImage backgroundImg;  // Background image variable
 
-// 재시작 버튼 위치 및 크기 설정
+// Restart button position and size
 int restartButtonX, restartButtonY, restartButtonW, restartButtonH;
 
 void setup() {
-  size(600, 600, P3D);  // 화면 크기를 600x600으로 조정
+  size(600, 600, P3D);  // Set screen size to 600x600
   cols = width / gridSize;
   rows = height / gridSize;
   
-  characterImg = loadImage("resources/character.png");  // 캐릭터 이미지 로드
-  flowerImg = loadImage("resources/flower.png");  // 꽃 이미지 로드
-  backgroundImg = loadImage("resources/background.png");  // 배경 이미지 로드
+  characterImg = loadImage("resources/character.png");  // Load character image
+  flowerImg = loadImage("resources/flower.png");  // Load flower image
+  backgroundImg = loadImage("resources/background.png");  // Load background image
   
-  // 재시작 버튼 위치와 크기
+  // Set restart button position and size
   restartButtonW = 150;
   restartButtonH = 50;
   restartButtonX = (width - restartButtonW) / 2;
   restartButtonY = height / 2 + 50;
   
-  // 사운드 파일 로드 (백그라운드 스레드에서 로드)
+  // Load sound files (background thread loading)
   thread("loadSounds");
 
-  initGame();  // 게임 초기화
+  initGame();  // Initialize game
 }
 
 void loadSounds() {
-  backgroundMusic = new SoundFile(this, "resources/background.mp3");  // 배경 음악 로드
-  eatSound = new SoundFile(this, "resources/eat.wav");  // 먹을 때 효과음 로드
-  gameOverSound = new SoundFile(this, "resources/gameover.wav");  // 게임 오버 효과음 로드
-  backgroundMusic.loop();  // 배경 음악 루프 재생
-  loadingDone = true;  // 로딩 완료
+  backgroundMusic = new SoundFile(this, "resources/background.mp3");  // Load background music
+  eatSound = new SoundFile(this, "resources/eat.wav");  // Load eating sound effect
+  gameOverSound = new SoundFile(this, "resources/gameover.wav");  // Load game over sound effect
+  backgroundMusic.loop();  // Loop background music
+  loadingDone = true;  // Loading complete
 }
 
 void initGame() {
-  // 플레이어 초기 위치 및 색상
+  // Initialize player position and color
   playerX = cols / 2 * gridSize;
   playerY = rows / 2 * gridSize;
   playerDirX = 1;
   playerDirY = 0;
   currentColor = randomColor();
   
-  speed = 10;  // 기본 속도 초기화
+  speed = 10;  // Reset default speed
   frameCounter = 0;
   score = 0;
-  gameOver = false;  // 게임 오버 상태 초기화
-  hasPlayedGameOverSound = false;  // 게임 오버 사운드 초기화
+  gameOver = false;  // Reset game over state
+  hasPlayedGameOverSound = false;  // Reset game over sound flag
   
-  // 꽃을 저장할 리스트 초기화
+  // Initialize the list to store flowers
   flowers = new ArrayList<Flower>();
-  spawnFlowers();  // 초기 꽃 생성
+  spawnFlowers();  // Spawn initial flowers
 }
 
-// 매 프레임마다 호출
+// Called every frame
 void draw() {
   if (!loadingDone) {
-    drawLoadingScreen();  // 로딩 화면 표시
+    drawLoadingScreen();  // Display loading screen
     return;
   }
   
-  // 배경 이미지 그리기
-  image(backgroundImg, 0, 0, width, height);  // 배경 이미지 크기에 맞춰 화면 전체에 그리기
+  // Draw background image
+  image(backgroundImg, 0, 0, width, height);  // Draw background image covering the screen
   
   if (gameOver) {
     displayGameOver();
     return;
   }
   
-  // 점수 표시
+  // Display score
   displayScore();
   
-  // 프레임 수에 따라 플레이어가 움직이도록 속도 제어
+  // Control player movement based on frame count and speed
   frameCounter++;
   if (frameCounter >= 60 / speed) {
     frameCounter = 0;
     movePlayer();
   }
   
-  // 플레이어 그리기
+  // Draw player
   drawCharacter();
   
-  // 꽃 그리기
+  // Draw flowers
   for (Flower flower : flowers) {
     flower.show();
   }
   
-  // 게임 오버 체크
+  // Check for game over condition
   if (checkCollision()) {
     gameOver = true;
   }
   
-  // 게임 오버 사운드 재생 (게임 오버가 처음 발생했을 때만 재생)
+  // Play game over sound (only when game over occurs for the first time)
   if (gameOver && !hasPlayedGameOverSound) {
-    gameOverSound.play();  // 게임 오버 사운드 재생
-    hasPlayedGameOverSound = true;  // 사운드가 재생되었음을 기록
+    gameOverSound.play();  // Play game over sound
+    hasPlayedGameOverSound = true;  // Mark sound as played
   }
 }
 
-// 로딩 화면을 그리는 함수
+// Function to draw loading screen
 void drawLoadingScreen() {
   background(0);
   textAlign(CENTER, CENTER);
@@ -141,60 +153,58 @@ void drawLoadingScreen() {
   popMatrix();
 }
 
-// 게임 오버 시 화면에 최종 점수와 재시작 버튼 표시
+// Display final score and restart button on game over
 void displayGameOver() {
-  hint(DISABLE_DEPTH_TEST);  // 깊이 테스트 비활성화
+  hint(DISABLE_DEPTH_TEST);  // Disable depth testing
 
-  // 게임 오버 메시지
+  // Game over message
   textAlign(CENTER, CENTER);
   textSize(32);
   fill(255, 0, 0);
   text("Game Over", width / 2, height / 2 - 50);
   
-  // 최종 점수 표시
+  // Display final score
   fill(0);
   textSize(24);
   text("Final Score: " + score, width / 2, height / 2);
   
-  // 재시작 버튼 그리기
-  fill(100, 100, 255);  // 버튼 색
-  stroke(0);  // 테두리 색
-  strokeWeight(2);  // 테두리 두께
+  // Draw restart button
+  fill(100, 100, 255);  // Button color
+  stroke(0);  // Border color
+  strokeWeight(2);  // Border thickness
   rect(restartButtonX, restartButtonY, restartButtonW, restartButtonH, 10);
 
-  // 텍스트 정렬 (중앙에서 세로 정렬 정확하게)
+  // Text alignment (vertically centered)
   float textY = restartButtonY + (restartButtonH / 2) + (textAscent() - textDescent()) / 2;
   textY -= 1;
 
-  // 버튼 텍스트 그리기
-  fill(255);  // 텍스트 색상
+  // Draw button text
+  fill(255);  // Text color
   textSize(20);
-  textAlign(CENTER);  // 수평 가운데 정렬
-  text("Restart", restartButtonX + restartButtonW / 2, textY);  // 세로 중앙에 텍스트 그리기
+  textAlign(CENTER);  // Center horizontal alignment
+  text("Restart", restartButtonX + restartButtonW / 2, textY);  // Draw text centered vertically
   
-  hint(ENABLE_DEPTH_TEST);  // 깊이 테스트 다시 활성화
+  hint(ENABLE_DEPTH_TEST);  // Re-enable depth testing
 }
 
-
-
-// 점수를 화면 상단에 표시
+// Display score in the top-left corner of the screen
 void displayScore() {
   fill(0);
   textSize(24);
   textAlign(LEFT, TOP);
-  text("Score: " + score, 10, 10);  // 화면 좌측 상단에 점수 표시
+  text("Score: " + score, 10, 10);  // Display score at the top left
 }
 
-// 플레이어 그리기 (현재 색상 적용)
+// Draw player with current color
 void drawCharacter() {
-  tint(currentColor);  // 현재 플레이어 색상으로 캐릭터 이미지를 틴트
-  image(characterImg, playerX, playerY, gridSize, gridSize);  // 캐릭터 이미지를 플레이어 위치에 맞춰 그리기
-  noTint();  // 다른 이미지에 영향을 주지 않도록 틴트 해제
+  tint(currentColor);  // Tint character image with current color
+  image(characterImg, playerX, playerY, gridSize, gridSize);  // Draw character image at player position
+  noTint();  // Clear tint for other images
 }
 
-// 방향키 입력 처리
+// Handle arrow key inputs
 void keyPressed() {
-  if (gameOver) return;  // 게임 오버 시 방향키 무시
+  if (gameOver) return;  // Ignore arrow keys when game over
   
   if (keyCode == UP && playerDirY == 0) {
     playerDirX = 0;
@@ -211,132 +221,132 @@ void keyPressed() {
   }
 }
 
-// 무작위 색 반환
+// Return a random color
 color randomColor() {
   return colors[int(random(colors.length))];
 }
 
-// 플레이어 움직임 처리
+// Handle player movement
 void movePlayer() {
   playerX += playerDirX * gridSize;
   playerY += playerDirY * gridSize;
   
-  // 화면 밖으로 나가면 게임 오버
+  // End game if player moves out of bounds
   if (playerX < 0 || playerX >= width || playerY < 0 || playerY >= height) {
     gameOver = true;
     return;
   }
   
-  // 꽃을 먹었는지 확인
+  // Check if player eats a flower
   for (int i = flowers.size() - 1; i >= 0; i--) {
     Flower flower = flowers.get(i);
     if (flower.x == playerX && flower.y == playerY) {
       if (flower.c == currentColor) {
-        flowers.remove(i);  // 먹은 꽃 제거
-        currentColor = randomColor();  // 색 변경
-        if (speed < maxSpeed) {  // 최대 속도 이하일 때만 속도 증가
-          speed++;  // 속도 증가
+        flowers.remove(i);  // Remove eaten flower
+        currentColor = randomColor();  // Change color
+        if (speed < maxSpeed) {  // Increase speed if below max
+          speed++;  
         }
-        score++;  // 점수 증가
-        spawnFlowers();  // 모든 꽃의 위치를 랜덤으로 재생성
+        score++;  // Increase score
+        spawnFlowers();  // Respawn all flowers
         
-        eatSound.play();  // 꽃 먹었을 때 효과음 재생
+        eatSound.play();  // Play eating sound effect
       } else {
-        gameOver = true;  // 색이 맞지 않으면 게임 오버
+        gameOver = true;  // End game if color does not match
       }
       break;
     }
   }
 }
 
-// 새로운 꽃을 화면에 배치 (플레이어 주변에 생성되지 않도록, 기존 꽃과 중복되지 않도록)
+// Spawn new flowers, ensuring they don't spawn too close to the player or overlap with existing flowers
 void spawnFlowers() {
-  flowers.clear();  // 기존 꽃 리스트 초기화
+  flowers.clear();  // Clear current flower list
   
-  // 플레이어와 같은 색의 꽃 추가
+  // Add flower with player color
   boolean playerFlowerSpawned = false;
-  int attempts = 0;  // 최대 시도 횟수
+  int attempts = 0;  // Max number of spawn attempts
   
-  while (!playerFlowerSpawned && attempts < 100) {  // 최대 100번 시도
+  while (!playerFlowerSpawned && attempts < 100) {  // Attempt up to 100 times
     Flower playerFlower = new Flower(currentColor);
     
-    // 꽃이 유효한 위치에 생성될 때까지 반복
+    // Check for valid spawn position
     if (dist(playerFlower.x, playerFlower.y, playerX, playerY) >= safeDistance && 
         playerFlower.x > borderMargin && playerFlower.x < width - borderMargin &&
         playerFlower.y > borderMargin && playerFlower.y < height - borderMargin &&
-        !isFlowerAtLocation(playerFlower.x, playerFlower.y)) {  // 중복 위치 확인
+        !isFlowerAtLocation(playerFlower.x, playerFlower.y)) {  // Check for overlapping positions
       flowers.add(playerFlower);
-      playerFlowerSpawned = true;  // 꽃이 성공적으로 생성됨
+      playerFlowerSpawned = true;  // Successfully spawned player flower
     }
     attempts++;
   }
 
-  // 추가적인 꽃 생성 (각 색상당 1개씩)
-  for (int i = 0; i < 3; i++) {  // 꽃의 수를 조절 (총 4개의 꽃 생성)
+  // Spawn additional flowers (one of each color)
+  for (int i = 0; i < 3; i++) {  // Control number of flowers (4 total)
     Flower flower;
     boolean validFlower = false;
-    attempts = 0;  // 최대 시도 횟수 초기화
+    attempts = 0;  // Reset max attempts
 
-    // 꽃이 유효한 위치에 생성될 때까지 반복
-    while (!validFlower && attempts < 100) {  // 최대 100번 시도
+    // Repeat until a valid spawn position is found
+    while (!validFlower && attempts < 100) {  // Attempt up to 100 times
       flower = new Flower(randomColor());
       
       if (dist(flower.x, flower.y, playerX, playerY) >= safeDistance && 
           flower.x > borderMargin && flower.x < width - borderMargin &&
           flower.y > borderMargin && flower.y < height - borderMargin &&
-          !isFlowerAtLocation(flower.x, flower.y)) {  // 중복 위치 확인
+          !isFlowerAtLocation(flower.x, flower.y)) {  // Check for overlapping positions
         flowers.add(flower);
-        validFlower = true;  // 꽃이 성공적으로 생성됨
+        validFlower = true;  // Successfully spawned flower
       }
       attempts++;
     }
   }
 }
 
-// 특정 위치에 꽃이 이미 있는지 확인하는 함수
+// Check if a flower already exists at a given location
 boolean isFlowerAtLocation(int x, int y) {
   for (Flower flower : flowers) {
     if (flower.x == x && flower.y == y) {
-      return true;  // 해당 위치에 이미 꽃이 존재
+      return true;  // Flower exists at this location
     }
   }
-  return false;  // 해당 위치에 꽃이 없음
+  return false;  // No flower at this location
 }
 
-// 플레이어의 충돌 여부 체크
+// Check for player collision with flowers
 boolean checkCollision() {
   for (Flower flower : flowers) {
     if (flower.x == playerX && flower.y == playerY) {
-      return true;  // 충돌 발생
+      return true;  // Collision detected
     }
   }
-  return false;  // 충돌 없음
+  return false;  // No collision
 }
 
-// Flower 클래스
+// Flower class
 class Flower {
-  int x, y;  // 꽃의 위치
-  color c;  // 꽃의 색상
+  int x, y;  // Flower position
+  color c;  // Flower color
   
   Flower(color flowerColor) {
     this.c = flowerColor;
-    // 꽃의 랜덤 위치 생성
+    // Generate random position for flower
     this.x = int(random(borderMargin, width - borderMargin) / gridSize) * gridSize;
     this.y = int(random(borderMargin, height - borderMargin) / gridSize) * gridSize;
   }
   
   void show() {
-    tint(c);  // 꽃 색상으로 틴트 적용
-    image(flowerImg, x, y, gridSize, gridSize);  // 꽃 이미지 그리기
-    noTint();  // 이후 그리기에 영향을 주지 않도록 틴트 해제
+    tint(c);  // Apply tint with flower color
+    image(flowerImg, x, y, gridSize, gridSize);  // Draw flower image
+    noTint();  // Clear tint for other drawings
   }
 }
 
-// 마우스 클릭 시 재시작
+// Restart game on mouse click
 void mousePressed() {
-  // 재시작 버튼 영역 내 클릭
+  // Check if click is within restart button area
   if (gameOver && mouseX > restartButtonX && mouseX < restartButtonX + restartButtonW &&
-      mouseY > restartButtonY && mouseY < restartButtonY + restartButtonH) {
-    initGame();  // 게임 초기화
+      mouseY > restartButtonY && mouseY < restartButtonH + restartButtonY) {
+    initGame();  // Reinitialize game
   }
 }
