@@ -1,4 +1,4 @@
 @echo off
-cd Maxime
+cd [2] Maxime
 aMain.exe
 exit

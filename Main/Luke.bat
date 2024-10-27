@@ -1,4 +1,4 @@
 @echo off
-cd Luke
+cd "[1] Luke"
 game.exe
 exit

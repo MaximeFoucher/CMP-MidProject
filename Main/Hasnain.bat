@@ -1,4 +1,4 @@
 @echo off
-cd Hasnain
+cd [4] Hasnain
 Hasnain.exe
 exit

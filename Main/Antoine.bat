@@ -1,4 +1,4 @@
 @echo off
-cd Antoine
+cd [3] Antoine
 Projet.exe
 exit
