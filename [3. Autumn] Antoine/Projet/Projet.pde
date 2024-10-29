@@ -1,3 +1,5 @@
+// Antoine BROSSEAU 202432482
+
 PImage feuille_jaune, feuille_rouge, ecureuil, fond;  // Images for the yellow leaf, red leaf, squirrel, and background
 float[] x, y, rot, speed;  // Arrays to store positions, rotations, and speeds of leaves
 int[] feuilleType;         // Array to store the type of each leaf (0 for yellow, 1 for red)
